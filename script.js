@@ -1,104 +1,218 @@
-// 1. Inisialisasi Peta
-const map = L.map('map', { zoomControl: false }).setView([-6.220, 106.825], 13);
-L.control.zoom({ position: 'bottomright' }).addTo(map);
-map.attributionControl.setPrefix('🇮🇩 <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>');
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+// 1. Definisikan Mode Peta (Basemaps)
+const streetMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-}).addTo(map);
+    attribution: '&copy; OpenStreetMap'
+});
 
-// 2. Data Dummy Site 
-const sitesData = [
-    { name: "Site Sudirman 01", type: "Macro", status: "Active", lat: -6.225, lng: 106.811, rsrp: "-85 dBm", capacity: "95%" },
-    { name: "Site Kuningan 04", type: "Macro", status: "Maintenance", lat: -6.229, lng: 106.829, rsrp: "-110 dBm", capacity: "12%" },
-    { name: "Mini Thamrin 02", type: "Minimacro", status: "Active", lat: -6.195, lng: 106.821, rsrp: "-75 dBm", capacity: "80%" },
-    { name: "Mini Setiabudi", type: "Minimacro", status: "Active", lat: -6.211, lng: 106.828, rsrp: "-80 dBm", capacity: "65%" },
-    { name: "Site Gatot Subroto", type: "Macro", status: "Active", lat: -6.235, lng: 106.820, rsrp: "-88 dBm", capacity: "78%" }
-];
+const satelliteMap = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
+    maxZoom: 20, 
+    attribution: '© Google Maps'
+});
 
-// FITUR BARU: Layer Group untuk menampung marker agar mudah dihapus/digambar ulang
-const markerLayer = L.layerGroup().addTo(map);
+// 2. Inisialisasi Peta dengan Default Peta Jalan
+const map = L.map('map', { 
+    zoomControl: false,
+    layers: [streetMap] 
+}).setView([-2.5, 118], 5);
 
-// 3. Fungsi Render dengan Parameter Filter & Perhitungan Otomatis
-function renderMarkers(filterType = "All") {
-    markerLayer.clearLayers();
+L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Variabel untuk menghitung jumlah site yang tampil
-    let countMacro = 0;
-    let countMini = 0;
+// 3. Tambahkan Tombol Switcher Layer
+const baseMaps = {
+    "🌐 Peta Jalan": streetMap,
+    "🛰️ Citra Satelit": satelliteMap
+};
+L.control.layers(baseMaps, null, { position: 'topleft' }).addTo(map);
 
-    sitesData.forEach(site => {
-        // Logika Filter
-        if (filterType !== "All") {
-            if (filterType === "Maintenance" && site.status !== "Maintenance") return;
-            if (filterType === "Macro" && (site.type !== "Macro" || site.status === "Maintenance")) return;
-            if (filterType === "Minimacro" && (site.type !== "Minimacro" || site.status === "Maintenance")) return;
+// 4. Inisialisasi Marker Cluster (Garis Biru/Coverage Diaktifkan Kembali!)
+const markerCluster = L.markerClusterGroup({ 
+    chunkedLoading: true, 
+    maxClusterRadius: 40,
+    showCoverageOnHover: true // <--- Diubah kembali menjadi true
+});
+map.addLayer(markerCluster);
+
+let allSitesData = [];
+
+// --- LOGIKA DRAG & DROP & UPLOAD ---
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('excel-upload');
+const uploadStatus = document.getElementById('upload-status');
+
+dropZone.addEventListener('click', () => fileInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('active-drag');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('active-drag');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('active-drag');
+    if (e.dataTransfer.files.length) {
+        processExcelFile(e.dataTransfer.files[0]);
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) {
+        processExcelFile(e.target.files[0]);
+    }
+});
+
+function processExcelFile(file) {
+    if(!file.name.match(/\.(xlsx|xls|csv)$/i)) {
+        uploadStatus.innerHTML = "❌ Format file harus Excel!";
+        uploadStatus.style.color = "#c0392b";
+        return;
+    }
+
+    uploadStatus.innerHTML = "⏳ Sedang memproses data...";
+    uploadStatus.style.color = "#2d98da";
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const excelData = XLSX.utils.sheet_to_json(worksheet);
+            
+            allSitesData = [];
+            excelData.forEach(row => {
+                const lat = parseFloat(row["Latitude"]);
+                const lng = parseFloat(row["Longitude"]);
+                
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    allSitesData.push({
+                        name: row["Tower ID"] || "Unknown",
+                        emr: row["EMR Project ID"] || "-",
+                        type: row["Site Type"] || "Unknown",
+                        lat: lat, lng: lng,
+                        city: row["Kab/Kota"] || "-",
+                        prov: row["Provinsi"] || "-",
+                        vendor: row["Vendor"] || "Belum Ada Data"
+                    });
+                }
+            });
+            
+            uploadStatus.innerHTML = `✅ Berhasil memuat ${allSitesData.length} site!`;
+            uploadStatus.style.color = "#27ae60";
+
+            populateDropdowns();
+            applyFilters();
+            
+            if (allSitesData.length > 0) {
+                map.fitBounds(L.latLngBounds(allSitesData.map(s => [s.lat, s.lng])));
+            }
+
+        } catch (error) {
+            uploadStatus.innerHTML = "❌ Gagal membaca isi Excel.";
+            uploadStatus.style.color = "#c0392b";
+            console.error(error);
         }
-
-        // Kalkulasi jumlah
-        if (site.type === "Macro") countMacro++;
-        if (site.type === "Minimacro") countMini++;
-
-        let markerColor = "#2d98da"; 
-        let radiusSize = 12; 
-
-        if (site.status === "Maintenance") {
-            markerColor = "#fed330"; 
-        } else if (site.type === "Minimacro") {
-            markerColor = "#fc5c65"; 
-            radiusSize = 8; 
-        }
-
-        const marker = L.circleMarker([site.lat, site.lng], {
-            color: markerColor,
-            fillColor: markerColor,
-            fillOpacity: 0.8,
-            radius: radiusSize,
-            weight: 2
-        }).addTo(markerLayer);
-
-        marker.on('mouseover', function () {
-            this.setStyle({ weight: 4, fillOpacity: 1, radius: radiusSize + 4 });
-            this.bindTooltip(`<b>${site.name}</b> (${site.type})`, { direction: 'top' }).openTooltip();
-        });
-
-        marker.on('mouseout', function () {
-            this.setStyle({ weight: 2, fillOpacity: 0.8, radius: radiusSize });
-        });
-
-        const popupContent = `
-            <div style="font-family: 'Segoe UI', sans-serif; min-width: 150px; padding: 2px;">
-                <h4 style="margin: 0 0 6px 0; color: #333; border-bottom: 2px solid ${markerColor}; padding-bottom: 4px;">${site.name}</h4>
-                <p style="margin: 3px 0; font-size: 13px;"><b>Tipe:</b> ${site.type}</p>
-                <p style="margin: 3px 0; font-size: 13px;"><b>Status:</b> <span style="color:${site.status === 'Active' ? '#27ae60' : '#e67e22'}; font-weight:bold;">${site.status}</span></p>
-                <p style="margin: 3px 0; font-size: 13px;"><b>RSRP Avg:</b> ${site.rsrp}</p>
-                <p style="margin: 3px 0; font-size: 13px;"><b>Kapasitas:</b> ${site.capacity}</p>
-            </div>
-        `;
-        
-        marker.bindPopup(popupContent);
-    });
-
-    // Mengubah angka di HTML secara dinamis
-    document.getElementById('count-macro').innerText = countMacro;
-    document.getElementById('count-mini').innerText = countMini;
+    };
+    reader.readAsArrayBuffer(file);
 }
 
-// Gambar titik untuk pertama kali (tampilkan semua)
-renderMarkers();
-
-// FITUR BARU: Logika Interaktif Tombol Filter
-document.querySelectorAll('.neu-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        // 1. Hapus efek "aktif" dari semua tombol
-        document.querySelectorAll('.neu-btn').forEach(btn => btn.classList.remove('active'));
-        
-        // 2. Berikan efek "aktif" ke tombol yang sedang diklik (tenggelam)
-        this.classList.add('active');
-        
-        // 3. Ambil data kategori dan saring petanya
-        const filterValue = this.getAttribute('data-filter');
-        renderMarkers(filterValue);
+// --- LOGIKA DROPDOWN CASCADING ---
+function fillSelect(id, itemsSet) {
+    const select = document.getElementById(id);
+    while (select.options.length > 1) { select.remove(1); }
+    Array.from(itemsSet).sort().forEach(item => {
+        select.add(new Option(item, item));
     });
+}
+
+function populateDropdowns() {
+    const provSet = new Set();
+    const vendorSet = new Set();
+
+    allSitesData.forEach(site => {
+        if(site.prov && site.prov !== "-") provSet.add(site.prov);
+        if(site.vendor) vendorSet.add(site.vendor);
+    });
+
+    fillSelect('filter-provinsi', provSet);
+    fillSelect('filter-vendor', vendorSet);
+    updateKotaDropdown(); 
+}
+
+function updateKotaDropdown() {
+    const selectedProv = document.getElementById('filter-provinsi').value;
+    const kotaSet = new Set();
+    
+    allSitesData.forEach(site => {
+        if (selectedProv === "All" || site.prov === selectedProv) {
+            if(site.city && site.city !== "-") kotaSet.add(site.city);
+        }
+    });
+    
+    fillSelect('filter-kota', kotaSet);
+}
+
+// --- LOGIKA FILTER & RENDER PETA ---
+function applyFilters() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const typeFilter = document.getElementById('filter-type').value;
+    const provFilter = document.getElementById('filter-provinsi').value;
+    const kotaFilter = document.getElementById('filter-kota').value;
+    const vendorFilter = document.getElementById('filter-vendor').value;
+
+    markerCluster.clearLayers();
+    const markersToAdd = [];
+    let counts = { Macro: 0, Minimacro: 0, Inbuilding: 0 };
+
+    allSitesData.forEach(site => {
+        const matchSearch = site.name.toLowerCase().includes(searchTerm) || site.emr.toLowerCase().includes(searchTerm);
+        const matchType = typeFilter === "All" || site.type === typeFilter;
+        const matchProv = provFilter === "All" || site.prov === provFilter;
+        const matchKota = kotaFilter === "All" || site.city === kotaFilter;
+        const matchVendor = vendorFilter === "All" || site.vendor === vendorFilter;
+
+        if (matchSearch && matchType && matchProv && matchKota && matchVendor) {
+            
+            if(counts[site.type] !== undefined) counts[site.type]++;
+
+            let markerColor = "#2d98da"; 
+            if (site.type === "Minimacro") markerColor = "#fc5c65";
+            if (site.type === "Inbuilding") markerColor = "#9b59b6";
+
+            const marker = L.circleMarker([site.lat, site.lng], {
+                color: markerColor, fillColor: markerColor, fillOpacity: 0.8, radius: 8, weight: 2
+            });
+
+            marker.bindPopup(`
+                <div style="min-width: 180px; padding: 2px;">
+                    <h4 style="margin: 0 0 6px 0; border-bottom: 2px solid ${markerColor}; padding-bottom: 4px; font-size:14px;">${site.name}</h4>
+                    <p style="margin: 3px 0; font-size: 11px;"><b>EMR ID:</b> ${site.emr}</p>
+                    <p style="margin: 3px 0; font-size: 11px;"><b>Tipe:</b> ${site.type}</p>
+                    <p style="margin: 3px 0; font-size: 11px;"><b>Lokasi:</b> ${site.city}, ${site.prov}</p>
+                    <p style="margin: 3px 0; font-size: 11px;"><b>Vendor:</b> ${site.vendor}</p>
+                </div>
+            `);
+            markersToAdd.push(marker);
+        }
+    });
+
+    markerCluster.addLayers(markersToAdd);
+    document.getElementById('count-macro').innerText = counts.Macro;
+    document.getElementById('count-mini').innerText = counts.Minimacro;
+    document.getElementById('count-inbuilding').innerText = counts.Inbuilding;
+}
+
+// --- EVENT LISTENERS ---
+document.getElementById('search-input').addEventListener('keyup', applyFilters);
+document.getElementById('filter-type').addEventListener('change', applyFilters);
+document.getElementById('filter-vendor').addEventListener('change', applyFilters);
+document.getElementById('filter-kota').addEventListener('change', applyFilters);
+
+document.getElementById('filter-provinsi').addEventListener('change', () => {
+    updateKotaDropdown();
+    applyFilters();
 });

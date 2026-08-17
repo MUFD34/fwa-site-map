@@ -1,4 +1,3 @@
-/* CSS Variabel untuk Neumorphism (Light Mode) */
 :root {
     --bg-color: #e0e5ec;
     --shadow-light: rgba(255, 255, 255, 0.7);
@@ -6,7 +5,7 @@
     --text-main: #4a4a4a;
     --macro-color: #2d98da;
     --mini-color: #fc5c65;
-    --maintenance-color: #fed330;
+    --inbuilding-color: #9b59b6;
 }
 
 body {
@@ -17,135 +16,128 @@ body {
     color: var(--text-main);
 }
 
-/* Bento Grid Layout */
 .dashboard-container {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 340px 1fr;
     gap: 25px;
     height: 92vh;
 }
 
-/* Neu-Bento Card Style (Neumorphism 3D) */
 .neu-card {
     background: var(--bg-color);
     border-radius: 24px;
     padding: 24px;
-    box-shadow: 9px 9px 16px var(--shadow-dark), 
-               -9px -9px 16px var(--shadow-light);
+    box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
     display: flex;
     flex-direction: column;
 }
 
-/* Elemen claymorphism inset (tenggelam) */
-.stat-box {
-    background: var(--bg-color);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-    box-shadow: inset 5px 5px 10px var(--shadow-dark), 
-                inset -5px -5px 10px var(--shadow-light);
-}
-
-/* Tipografi dasar */
-h2 { margin: 0; font-size: 1.5rem; }
-h3 { margin: 0; padding-bottom: 10px; font-size: 1.1rem; }
-.subtitle { font-size: 14px; opacity: 0.8; margin-bottom: 25px; }
-.stat-number { font-size: 2.5rem; font-weight: bold; margin: 0; }
-.status-footer { margin-top: auto; text-align: center; font-size: 12px; opacity: 0.6; }
-
-/* Warna Teks & Background untuk Indikator */
-.macro-text { color: var(--macro-color); }
-.mini-text { color: var(--mini-color); }
-.bg-macro { background: var(--macro-color); }
-.bg-mini { background: var(--mini-color); }
-.bg-maintenance { background: var(--maintenance-color); }
-
-/* Map Container */
-.map-wrapper {
+/* DRAG & DROP ZONE */
+.drag-drop-zone {
     position: relative;
-    padding: 0; 
-    overflow: hidden;
-    border: 4px solid var(--bg-color);
-}
-
-#map {
-    height: 100%;
-    width: 100%;
-    border-radius: 20px;
-    z-index: 1; /* Peta tetap di bawah elemen glass */
-}
-
-/* Glassmorphism Panel (Legenda mengambang) */
-.glass-panel {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 1000; /* Memastikan panel selalu di atas peta */
-    background: rgba(255, 255, 255, 0.35);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-}
-
-.glass-panel h4 { margin-top: 0; margin-bottom: 15px; }
-.legend-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 14px; font-weight: 500;}
-.dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
-
-/* --- FITUR BARU: Tombol Filter Neumorphism --- */
-.filter-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.neu-btn {
     background: var(--bg-color);
-    border: none;
-    padding: 10px;
+    border: 2px dashed #a3b1c6;
+    border-radius: 16px;
+    padding: 20px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.drag-drop-zone:hover { border-color: var(--macro-color); }
+.drag-drop-zone.active-drag {
+    border-color: #fff;
+    background: linear-gradient(45deg, #e0e5ec, #a3c2e5, #e0e5ec);
+    background-size: 200% 200%;
+    animation: gradientShift 2s ease infinite;
+    box-shadow: inset 5px 5px 10px rgba(163, 177, 198, 0.8), inset -5px -5px 10px rgba(255, 255, 255, 0.9);
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.drop-content { pointer-events: none; }
+.upload-icon { font-size: 2.5rem; display: block; margin-bottom: 5px; }
+
+/* INPUTS */
+.search-container { margin-bottom: 20px; }
+.neu-input, .neu-select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 15px;
     border-radius: 12px;
+    border: none;
+    background: var(--bg-color);
     color: var(--text-main);
     font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 4px 4px 8px var(--shadow-dark), 
-               -4px -4px 8px var(--shadow-light);
-    transition: all 0.2s ease;
+    box-shadow: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+    outline: none;
+    margin-bottom: 12px;
+}
+.neu-select { cursor: pointer; appearance: none; }
+
+/* STATS (Sudah Diperbaiki Agar Simetris) */
+.stats-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* Memaksa 3 kolom berukuran persis sama */
+    gap: 8px; 
+    margin-bottom: 20px; 
+}
+.stat-box {
+    background: var(--bg-color); 
+    border-radius: 12px; 
+    padding: 12px 5px; 
+    text-align: center;
+    box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
 }
 
-/* Efek saat disorot mouse */
-.neu-btn:hover {
-    box-shadow: 2px 2px 4px var(--shadow-dark), 
-               -2px -2px 4px var(--shadow-light);
+h2 { margin: 0; font-size: 1.5rem; }
+.subtitle { font-size: 13px; opacity: 0.8; margin-bottom: 25px; }
+.stat-number { font-size: 1.35rem; font-weight: bold; margin: 0; } /* Sedikit dikecilkan agar muat angka besar */
+
+.macro-text { color: var(--macro-color); }
+.mini-text { color: var(--mini-color); }
+.inbuilding-text { color: var(--inbuilding-color); }
+
+.bg-macro { background: var(--macro-color); }
+.bg-mini { background: var(--mini-color); }
+.bg-inbuilding { background: var(--inbuilding-color); }
+
+/* MAP */
+.map-wrapper { position: relative; padding: 0; overflow: hidden; border: 4px solid var(--bg-color); }
+#map { height: 100%; width: 100%; border-radius: 20px; z-index: 1; }
+
+.glass-panel {
+    position: absolute; top: 20px; right: 20px; z-index: 1000;
+    background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 16px; padding: 15px 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+.glass-panel h4 { margin-top: 0; margin-bottom: 12px; }
+.legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; font-weight: 500;}
+.dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 10px; }
+
+/* KUSTOMISASI KONTROL LAYER PETA AGAR LEBIH RAPI */
+.leaflet-control-layers {
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    padding: 5px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
-/* Efek saat tombol sedang aktif (tenggelam) */
-.neu-btn.active {
-    box-shadow: inset 4px 4px 8px var(--shadow-dark), 
-                inset -4px -4px 8px var(--shadow-light);
-    color: var(--macro-color);
-}
-
-/* --- FITUR BARU: Responsivitas Layar --- */
 @media (max-width: 900px) {
-    .dashboard-container {
-        /* Mengubah dari kiri-kanan menjadi atas-bawah */
-        grid-template-columns: 1fr;
-        height: auto; 
-    }
-
-    #map {
-        /* Memberikan tinggi tetap untuk peta di layar HP/Tablet */
-        min-height: 400px;
-    }
-
-    .glass-panel {
-        /* Menyesuaikan posisi legenda di layar kecil */
-        bottom: 20px;
-        top: auto;
-        padding: 10px;
-    }
+    .dashboard-container { grid-template-columns: 1fr; height: auto; }
+    #map { min-height: 500px; }
 }

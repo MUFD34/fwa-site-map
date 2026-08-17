@@ -4,68 +4,94 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FWA Site Map</title>
-    
-    <!-- MENAMBAHKAN ICON MAP.PNG -->
     <link rel="icon" type="image/png" href="map.png">
-
-    <!-- Import Leaflet CSS untuk Peta -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Menghubungkan ke file CSS buatanmu -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
     <div class="dashboard-container">
-        <!-- Sidebar: Neu-Bento -->
+        <!-- Sidebar -->
         <div class="neu-card sidebar">
             <h2>🛰️ Network Overview</h2>
             <p class="subtitle">Live status infrastruktur telekomunikasi.</p>
             
-            <div class="stat-box">
-                <h3 class="macro-text">Macro Sites</h3>
-                <p class="stat-number macro-text" id="count-macro">42</p>
+            <!-- Animated Drag & Drop Zone -->
+            <div class="drag-drop-zone" id="drop-zone">
+                <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" hidden />
+                <div class="drop-content" id="drop-content">
+                    <span class="upload-icon">📂</span>
+                    <p style="margin: 10px 0; font-size: 13px;"><b>Drag & Drop</b> file Excel Anda di sini<br>atau klik untuk mencari file.</p>
+                    <p id="upload-status" style="font-size: 11px; margin: 0; color: #7f8c8d;"></p>
+                </div>
             </div>
-            
-            <div class="stat-box">
-                <h3 class="mini-text">Minimacro Sites</h3>
-                <p class="stat-number mini-text" id="count-mini">128</p>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <input type="text" id="search-input" class="neu-input" placeholder="🔍 Cari Tower ID / EMR ID...">
             </div>
-            
-            <!-- FITUR BARU: Filter Buttons -->
-            <div style="margin-top: 10px; margin-bottom: 20px;">
-                <h3 style="font-size: 1rem; margin-bottom: 15px; text-align: center;">Filter Site</h3>
-                <div class="filter-buttons">
-                    <button class="neu-btn active" data-filter="All">All</button>
-                    <button class="neu-btn" data-filter="Macro">Macro</button>
-                    <button class="neu-btn" data-filter="Minimacro">Mini</button>
-                    <button class="neu-btn" data-filter="Maintenance">Down</button>
+
+            <!-- Statistik (Sudah Diperbaiki Agar Simetris) -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h3 class="macro-text" style="font-size: 11px; margin-bottom: 5px;">Macro</h3>
+                    <p class="stat-number macro-text" id="count-macro">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3 class="mini-text" style="font-size: 11px; margin-bottom: 5px;">Minimacro</h3>
+                    <p class="stat-number mini-text" id="count-mini">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3 class="inbuilding-text" style="font-size: 11px; margin-bottom: 5px;">Inbuilding</h3>
+                    <p class="stat-number inbuilding-text" id="count-inbuilding">0</p>
                 </div>
             </div>
             
-            <div class="status-footer">
-                Auto-refresh: Active
+            <!-- Filter Dropdowns -->
+            <div class="filters-container">
+                <h3 style="font-size: 0.95rem; margin-bottom: 10px;">Filter Spesifik</h3>
+                
+                <select id="filter-type" class="neu-select">
+                    <option value="All">📡 Semua Tipe Site</option>
+                    <option value="Macro">Macro</option>
+                    <option value="Minimacro">Minimacro</option>
+                    <option value="Inbuilding">Inbuilding</option>
+                </select>
+
+                <select id="filter-provinsi" class="neu-select">
+                    <option value="All">📍 Semua Provinsi</option>
+                </select>
+
+                <select id="filter-kota" class="neu-select">
+                    <option value="All">🏙️ Semua Kab/Kota</option>
+                </select>
+
+                <select id="filter-vendor" class="neu-select">
+                    <option value="All">🏢 Semua Vendor</option>
+                </select>
             </div>
         </div>
 
-        <!-- Main Content: Map & Glassmorphism -->
+        <!-- Main Content -->
         <div class="neu-card map-wrapper">
             <div id="map"></div>
             
-            <!-- Glassmorphism Legend -->
             <div class="glass-panel">
                 <h4>Legenda Jaringan</h4>
-                <div class="legend-item"><span class="dot bg-macro"></span> Macro (Aktif)</div>
-                <div class="legend-item"><span class="dot bg-mini"></span> Minimacro (Aktif)</div>
-                <div class="legend-item"><span class="dot bg-maintenance"></span> Maintenance</div>
+                <div class="legend-item"><span class="dot bg-macro"></span> Macro</div>
+                <div class="legend-item"><span class="dot bg-mini"></span> Minimacro</div>
+                <div class="legend-item"><span class="dot bg-inbuilding"></span> Inbuilding</div>
             </div>
         </div>
     </div>
 
-    <!-- Import Leaflet JS untuk fungsi Peta -->
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Menghubungkan ke file JS buatanmu (ditaruh di bawah agar HTML dimuat duluan) -->
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
