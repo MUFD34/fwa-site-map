@@ -3,92 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Signal Lost</title>
-    <style>
-        :root {
-            --bg-color: #e0e5ec;
-            --shadow-light: rgba(255, 255, 255, 0.7);
-            --shadow-dark: rgba(163, 177, 198, 0.6);
-            --text-main: #4a4a4a;
-            --macro-color: #2d98da;
-            --mini-color: #fc5c65;
-        }
-
-        /* Mencegah seleksi teks dan copy-paste */
-        * {
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: var(--text-main);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-        }
-
-        .neu-card {
-            background: var(--bg-color);
-            border-radius: 32px;
-            padding: 60px 50px;
-            box-shadow: 12px 12px 24px var(--shadow-dark), -12px -12px 24px var(--shadow-light);
-            text-align: center;
-            max-width: 650px;
-            width: 100%;
-        }
-
-        .icon-circle {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 25px;
-            border-radius: 50%;
-            background: var(--bg-color);
-            box-shadow: inset 6px 6px 12px var(--shadow-dark), inset -6px -6px 12px var(--shadow-light);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 56px;
-        }
-
-        .error-code {
-            font-size: 6rem;
-            font-weight: bold;
-            margin: 0;
-            color: var(--mini-color);
-            line-height: 1;
-            letter-spacing: -2px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            margin: 22px 0 14px;
-            font-weight: 700;
-        }
-
-        p {
-            font-size: 1.15rem;
-            opacity: 0.85;
-            margin: 0;
-            line-height: 1.6;
-        }
-    </style>
+    <title>FWA Site Map</title>
+    <link rel="icon" type="image/png" href="map.png">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="style.css" />
 </head>
-<body oncontextmenu="return false" oncopy="return false" oncut="return false" ondragstart="return false">
+<body>
 
-    <div class="neu-card">
-        <div class="icon-circle">📡</div>
-        <h2 class="error-code">404</h2>
-        <h1>Signal Lost / Under Maintenance</h1>
-        <p>Halaman atau Tower ID yang Anda cari tidak ditemukan atau sedang dalam perbaikan jaringan.</p>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="neu-card sidebar">
+            <h2>🛰️ Network Overview</h2>
+            <p class="subtitle">Live status infrastruktur telekomunikasi.</p>
+            
+            <!-- Animated Drag & Drop Zone -->
+            <div class="drag-drop-zone" id="drop-zone">
+                <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" hidden />
+                <div class="drop-content" id="drop-content">
+                    <span class="upload-icon">📂</span>
+                    <p style="margin: 10px 0; font-size: 13px;"><b>Drag & Drop</b> file Excel Anda di sini<br>atau klik untuk mencari file.</p>
+                    <p id="upload-status" style="font-size: 11px; margin: 0; color: #7f8c8d;"></p>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <input type="text" id="search-input" class="neu-input" placeholder="🔍 Cari Tower ID / EMR ID...">
+            </div>
+
+            <!-- Statistik (Sudah Diperbaiki Agar Simetris) -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h3 class="macro-text" style="font-size: 11px; margin-bottom: 5px;">Macro</h3>
+                    <p class="stat-number macro-text" id="count-macro">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3 class="mini-text" style="font-size: 11px; margin-bottom: 5px;">Minimacro</h3>
+                    <p class="stat-number mini-text" id="count-mini">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3 class="inbuilding-text" style="font-size: 11px; margin-bottom: 5px;">Inbuilding</h3>
+                    <p class="stat-number inbuilding-text" id="count-inbuilding">0</p>
+                </div>
+            </div>
+            
+            <!-- Filter Dropdowns -->
+            <div class="filters-container">
+                <h3 style="font-size: 0.95rem; margin-bottom: 10px;">Filter Spesifik</h3>
+                
+                <select id="filter-type" class="neu-select">
+                    <option value="All">📡 Semua Tipe Site</option>
+                    <option value="Macro">Macro</option>
+                    <option value="Minimacro">Minimacro</option>
+                    <option value="Inbuilding">Inbuilding</option>
+                </select>
+
+                <select id="filter-provinsi" class="neu-select">
+                    <option value="All">📍 Semua Provinsi</option>
+                </select>
+
+                <select id="filter-kota" class="neu-select">
+                    <option value="All">🏙️ Semua Kab/Kota</option>
+                </select>
+
+                <select id="filter-vendor" class="neu-select">
+                    <option value="All">🏢 Semua Vendor</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="neu-card map-wrapper">
+            <div id="map"></div>
+            
+            <div class="glass-panel">
+                <h4>Legenda Jaringan</h4>
+                <div class="legend-item"><span class="dot bg-macro"></span> Macro</div>
+                <div class="legend-item"><span class="dot bg-mini"></span> Minimacro</div>
+                <div class="legend-item"><span class="dot bg-inbuilding"></span> Inbuilding</div>
+            </div>
+        </div>
     </div>
 
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
