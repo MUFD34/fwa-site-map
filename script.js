@@ -85,8 +85,8 @@ function processExcelFile(file) {
             
             allSitesData = [];
             excelData.forEach(row => {
-                const lat = parseFloat(row["Latitude"]);
-                const lng = parseFloat(row["Longitude"]);
+                const lat = parseFloat(row["Lat TP Asli"]);
+                const lng = parseFloat(row["Long TP Asli"]);
                 
                 if (!isNaN(lat) && !isNaN(lng)) {
                     allSitesData.push({
