@@ -24,11 +24,11 @@ const baseMaps = {
 };
 L.control.layers(baseMaps, null, { position: 'topleft' }).addTo(map);
 
-// 4. Inisialisasi Marker Cluster (Garis Biru/Coverage Diaktifkan Kembali!)
+// 4. Inisialisasi Marker Cluster
 const markerCluster = L.markerClusterGroup({ 
     chunkedLoading: true, 
     maxClusterRadius: 40,
-    showCoverageOnHover: true // <--- Diubah kembali menjadi true
+    showCoverageOnHover: true 
 });
 map.addLayer(markerCluster);
 
@@ -64,7 +64,6 @@ fileInput.addEventListener('change', (e) => {
     }
 });
 
-// --- LOGIKA BACA EXCEL ---
 function processExcelFile(file) {
     if(!file.name.match(/\.(xlsx|xls|csv)$/i)) {
         uploadStatus.innerHTML = "❌ Format file harus Excel!";
@@ -86,28 +85,23 @@ function processExcelFile(file) {
             
             allSitesData = [];
             excelData.forEach(row => {
-                // 1. Ekstrak kedua koordinat (Faktual/Asli dan Rencana)
                 let latAsli = parseFloat(row["Lat TP Asli"]);
                 let lngAsli = parseFloat(row["Long TP Asli"]);
                 
                 let latRencana = parseFloat(row["Latitude"]);
                 let lngRencana = parseFloat(row["Longitude"]);
 
-                // 2. Smart Fallback dengan Validasi Logika Bumi (Geofence)
-                let finalLat = latRencana; // Default: Gunakan data rencana
+                let finalLat = latRencana; 
                 
-                // Syarat pakai Lat Asli: Harus angka valid, DAN berada di batas Bumi (-90 s/d 90), DAN bukan 0
                 if (!isNaN(latAsli) && latAsli >= -90 && latAsli <= 90 && latAsli !== 0) {
-                    finalLat = latAsli; // Timpa dengan data Asli
+                    finalLat = latAsli; 
                 }
 
-                let finalLng = lngRencana; // Default: Gunakan data rencana
-                // Syarat pakai Long Asli: Harus angka valid, DAN berada di batas Bumi (-180 s/d 180), DAN bukan 0
+                let finalLng = lngRencana; 
                 if (!isNaN(lngAsli) && lngAsli >= -180 && lngAsli <= 180 && lngAsli !== 0) {
-                    finalLng = lngAsli; // Timpa dengan data Asli
+                    finalLng = lngAsli;
                 }
 
-                // 3. Jika hasil akhirnya valid, masukkan ke dalam Peta
                 if (!isNaN(finalLat) && !isNaN(finalLng)) {
                     allSitesData.push({
                         name: row["Tower ID"] || "Unknown",
@@ -117,7 +111,8 @@ function processExcelFile(file) {
                         lng: finalLng,
                         city: row["Kab/Kota"] || "-",
                         prov: row["Provinsi"] || "-",
-                        vendor: row["Vendor"] || "Belum Ada Data"
+                        vendor: row["Vendor"] || "Belum Ada Data",
+                        status: row["Status Layanan"] || "Belum Ada Data" // Menangkap kolom baru
                     });
                 }
             });
@@ -128,7 +123,6 @@ function processExcelFile(file) {
             populateDropdowns();
             applyFilters();
             
-            // Auto Zoom Peta agar pas dengan letak titik-titiknya
             if (allSitesData.length > 0) {
                 map.fitBounds(L.latLngBounds(allSitesData.map(s => [s.lat, s.lng])));
             }
@@ -188,7 +182,7 @@ function applyFilters() {
 
     markerCluster.clearLayers();
     const markersToAdd = [];
-    let counts = { Macro: 0, Minimacro: 0, Inbuilding: 0 };
+    let counts = { Macro: 0, Minimacro: 0, "Not Yet": 0 }; // Mengubah variabel perhitungan
 
     allSitesData.forEach(site => {
         const matchSearch = site.name.toLowerCase().includes(searchTerm) || site.emr.toLowerCase().includes(searchTerm);
@@ -199,11 +193,19 @@ function applyFilters() {
 
         if (matchSearch && matchType && matchProv && matchKota && matchVendor) {
             
-            if(counts[site.type] !== undefined) counts[site.type]++;
+            // Tambahkan logika untuk mengakomodasi penamaan "Not Yet"
+            let category = site.type;
+            if (category !== "Macro" && category !== "Minimacro") {
+                 category = "Not Yet"; // Jika bukan Macro/Minimacro, masukkan ke kotak Not Yet
+            }
+            if(counts[category] !== undefined) counts[category]++;
 
             let markerColor = "#2d98da"; 
             if (site.type === "Minimacro") markerColor = "#fc5c65";
-            if (site.type === "Inbuilding") markerColor = "#9b59b6";
+            if (category === "Not Yet") markerColor = "#9b59b6"; // Warna ungu untuk Not Yet
+
+            // Atur warna teks status layanan (Hijau jika RFS)
+            let statusColor = site.status === 'RFS' ? '#27ae60' : '#e67e22';
 
             const marker = L.circleMarker([site.lat, site.lng], {
                 color: markerColor, fillColor: markerColor, fillOpacity: 0.8, radius: 8, weight: 2
@@ -214,6 +216,7 @@ function applyFilters() {
                     <h4 style="margin: 0 0 6px 0; border-bottom: 2px solid ${markerColor}; padding-bottom: 4px; font-size:14px;">${site.name}</h4>
                     <p style="margin: 3px 0; font-size: 11px;"><b>EMR ID:</b> ${site.emr}</p>
                     <p style="margin: 3px 0; font-size: 11px;"><b>Tipe:</b> ${site.type}</p>
+                    <p style="margin: 3px 0; font-size: 11px;"><b>Status:</b> <span style="color:${statusColor}; font-weight:bold;">${site.status}</span></p>
                     <p style="margin: 3px 0; font-size: 11px;"><b>Lokasi:</b> ${site.city}, ${site.prov}</p>
                     <p style="margin: 3px 0; font-size: 11px;"><b>Vendor:</b> ${site.vendor}</p>
                 </div>
@@ -225,7 +228,7 @@ function applyFilters() {
     markerCluster.addLayers(markersToAdd);
     document.getElementById('count-macro').innerText = counts.Macro;
     document.getElementById('count-mini').innerText = counts.Minimacro;
-    document.getElementById('count-inbuilding').innerText = counts.Inbuilding;
+    document.getElementById('count-notyet').innerText = counts["Not Yet"]; // Update ID
 }
 
 // --- EVENT LISTENERS ---
