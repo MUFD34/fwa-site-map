@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FWA Site Map</title>
+    <title>FWA & FTTH Coverage Map</title>
     <link rel="icon" type="image/png" href="map.png">
     
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
@@ -13,77 +14,88 @@
 </head>
 <body>
 
+    <!-- BAGIAN ATAS: PETA & SIDEBAR -->
     <div class="dashboard-container">
         <!-- Sidebar -->
         <div class="neu-card sidebar">
-            <h2>🛰️ Network Overview</h2>
-            <p class="subtitle">Live status infrastruktur telekomunikasi.</p>
+            <h2>🛰️ Network Coverage</h2>
+            <p class="subtitle">Pemetaan Area FWA & FTTH Terintegrasi.</p>
             
-            <!-- Animated Drag & Drop Zone -->
             <div class="drag-drop-zone" id="drop-zone">
                 <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" hidden />
                 <div class="drop-content" id="drop-content">
                     <span class="upload-icon">📂</span>
-                    <p style="margin: 10px 0; font-size: 13px;"><b>Drag & Drop</b> file Excel Anda di sini<br>atau klik untuk mencari file.</p>
+                    <p style="margin: 10px 0; font-size: 13px;"><b>Drag & Drop</b> Excel SDB RFS di sini<br>atau klik untuk mencari file.</p>
                     <p id="upload-status" style="font-size: 11px; margin: 0; color: #7f8c8d;"></p>
                 </div>
             </div>
 
-            <!-- Search Bar -->
             <div class="search-container">
-                <input type="text" id="search-input" class="neu-input" placeholder="🔍 Cari Tower ID / EMR ID...">
+                <input type="text" id="search-input" class="neu-input" placeholder="🔍 Cari EMR Project ID...">
             </div>
 
-            <!-- Statistik -->
             <div class="stats-grid">
                 <div class="stat-box">
-                    <h3 class="macro-text" style="font-size: 11px; margin-bottom: 5px;">Macro</h3>
-                    <p class="stat-number macro-text" id="count-macro">0</p>
+                    <h3 class="total-text" style="font-size: 11px; margin-bottom: 5px;">Total Site</h3>
+                    <p class="stat-number total-text" id="count-total">0</p>
                 </div>
                 <div class="stat-box">
-                    <h3 class="mini-text" style="font-size: 11px; margin-bottom: 5px;">Minimacro</h3>
-                    <p class="stat-number mini-text" id="count-mini">0</p>
+                    <h3 class="green-text" style="font-size: 11px; margin-bottom: 5px;">Green (FWA)</h3>
+                    <p class="stat-number green-text" id="count-green">0</p>
                 </div>
                 <div class="stat-box">
-                    <h3 class="notyet-text" style="font-size: 11px; margin-bottom: 5px;">Not Yet</h3>
-                    <p class="stat-number notyet-text" id="count-notyet">0</p>
+                    <h3 class="brown-text" style="font-size: 11px; margin-bottom: 5px;">Brown (Hybrid)</h3>
+                    <p class="stat-number brown-text" id="count-brown">0</p>
                 </div>
             </div>
             
-            <!-- Filter Dropdowns -->
             <div class="filters-container">
                 <h3 style="font-size: 0.95rem; margin-bottom: 10px;">Filter Spesifik</h3>
-                
-                <select id="filter-type" class="neu-select">
-                    <option value="All">📡 Semua Tipe Site</option>
-                    <option value="Macro">Macro</option>
-                    <option value="Minimacro">Minimacro</option>
-                    <option value="Not Yet">Not Yet</option>
+                <select id="filter-coverage" class="neu-select">
+                    <option value="All">📡 Semua Coverage</option>
+                    <option value="Green">Green (FWA Only)</option>
+                    <option value="Brown">Brown (FWA + FTTH)</option>
                 </select>
-
-                <select id="filter-provinsi" class="neu-select">
-                    <option value="All">📍 Semua Provinsi</option>
-                </select>
-
                 <select id="filter-kota" class="neu-select">
                     <option value="All">🏙️ Semua Kab/Kota</option>
-                </select>
-
-                <select id="filter-vendor" class="neu-select">
-                    <option value="All">🏢 Semua Vendor</option>
                 </select>
             </div>
         </div>
 
-        <!-- Main Content -->
+        <!-- Peta -->
         <div class="neu-card map-wrapper">
             <div id="map"></div>
-            
             <div class="glass-panel">
-                <h4>Legenda Jaringan</h4>
-                <div class="legend-item"><span class="dot bg-macro"></span> Macro</div>
-                <div class="legend-item"><span class="dot bg-mini"></span> Minimacro</div>
-                <div class="legend-item"><span class="dot bg-notyet"></span> Not Yet</div>
+                <h4>Legenda Coverage</h4>
+                <div class="legend-item"><span class="dot bg-green"></span> Green (FWA Only)</div>
+                <div class="legend-item"><span class="dot bg-brown"></span> Brown (FWA + FTTH)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BAGIAN BAWAH: ANALYTICS CHARTS -->
+    <div class="analytics-container">
+        <!-- Chart 1: Donut -->
+        <div class="neu-card chart-card">
+            <h3>Rasio Coverage Type</h3>
+            <div class="chart-wrapper">
+                <canvas id="coverageChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Chart 2: Bar -->
+        <div class="neu-card chart-card">
+            <h3>Top Distribusi Kab/Kota</h3>
+            <div class="chart-wrapper">
+                <canvas id="cityChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Chart 3: Line -->
+        <div class="neu-card chart-card">
+            <h3>Proyeksi Timeline RFS</h3>
+            <div class="chart-wrapper">
+                <canvas id="rfsChart"></canvas>
             </div>
         </div>
     </div>
@@ -92,6 +104,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Tambahan Library Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
